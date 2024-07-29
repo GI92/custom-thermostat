@@ -1578,9 +1578,7 @@ class $a399cc6bbb0eb26a$export$9eee6fffd22320a0 extends (0, $ab210b2da7b39b9d$ex
             this._hass.callWS(message).then((response)=>{
                 var asd = response;
             });
-            if (this._updatedConfig === undefined) this.hassCals.callServicWithResponse(this._hass, "todo", "get_items", this._entity).then((response)=>{
-                this.initTodo(response);
-            });
+            if (this._updatedConfig === undefined) this.initTodo();
         }
     }
     render() {
@@ -1892,22 +1890,32 @@ class $a399cc6bbb0eb26a$export$9eee6fffd22320a0 extends (0, $ab210b2da7b39b9d$ex
             entity_id: this._entity,
             item: newConfig
         });
+        this.getThermoConfigStringFromHass().then((thermoConfigString)=>this._savedConfig = thermoConfigString);
     }
-    initTodo(items) {
-        var thermoConfigString;
-        items.response[this._entity].items.forEach((element)=>{
-            var summary = element.summary;
-            if (summary.includes($a399cc6bbb0eb26a$var$todoConfName)) thermoConfigString = summary;
+    getThermoConfigStringFromHass() {
+        return this.hassCals.callServicWithResponse(this._hass, "todo", "get_items", this._entity).then((items)=>{
+            var thermoConfigString;
+            var todo = items.response[this._entity];
+            if (todo === undefined) return thermoConfigString;
+            todo.items.forEach((element)=>{
+                var summary = element.summary;
+                if (summary.includes($a399cc6bbb0eb26a$var$todoConfName)) thermoConfigString = summary;
+            });
+            return thermoConfigString;
         });
-        if (thermoConfigString === undefined) {
-            this._updatedConfig = {
-                name: $a399cc6bbb0eb26a$var$todoConfName,
-                configs: []
-            };
-            return;
-        }
-        this._savedConfig = thermoConfigString;
-        this.resetUpdatedConfig();
+    }
+    initTodo() {
+        this.getThermoConfigStringFromHass().then((thermoConfigString)=>{
+            if (thermoConfigString === undefined) {
+                this._updatedConfig = {
+                    name: $a399cc6bbb0eb26a$var$todoConfName,
+                    configs: []
+                };
+                return;
+            }
+            this._savedConfig = thermoConfigString;
+            this.resetUpdatedConfig();
+        });
     }
     // card configuration
     static getConfigElement() {

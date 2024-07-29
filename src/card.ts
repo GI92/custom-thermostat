@@ -108,9 +108,7 @@ export class ToggleCardTypeScript extends LitElement {
       });
 
       if (this._updatedConfig === undefined) {
-        this.hassCals
-          .callServicWithResponse(this._hass, "todo", "get_items", this._entity)
-          .then(response => { this.initTodo(response) });
+        this.initTodo();
       }
     }
   }
@@ -462,27 +460,42 @@ export class ToggleCardTypeScript extends LitElement {
         item: newConfig
       });
     }
-    this._savedConfig = newConfig;
+    this.getThermoConfigStringFromHass()
+      .then(thermoConfigString => this._savedConfig = thermoConfigString);
   }
 
-  initTodo(items) {
-    var thermoConfigString: string;
-    items.response[this._entity].items.forEach(element => {
-      var summary = element.summary;
-      if (summary.includes(todoConfName)) {
-        thermoConfigString = summary;
-      }
-    });
+  getThermoConfigStringFromHass() {
+    return this.hassCals
+      .callServicWithResponse(this._hass, "todo", "get_items", this._entity)
+      .then(items => {
+        var thermoConfigString: string;
+        var todo = (items as any).response[this._entity];
+        if (todo === undefined) {
+          return thermoConfigString;
+        }
+        todo.items.forEach(element => {
+          var summary = element.summary;
+          if (summary.includes(todoConfName)) {
+            thermoConfigString = summary;
+          }
+        });
+        return thermoConfigString
+      });
+  }
 
-    if (thermoConfigString === undefined) {
-      this._updatedConfig = {
-        name: todoConfName,
-        configs: []
-      };
-      return;
-    }
-    this._savedConfig = thermoConfigString;
-    this.resetUpdatedConfig();
+  initTodo() {
+    this.getThermoConfigStringFromHass()
+      .then(thermoConfigString => {
+        if (thermoConfigString === undefined) {
+          this._updatedConfig = {
+            name: todoConfName,
+            configs: []
+          };
+          return;
+        }
+        this._savedConfig = thermoConfigString;
+        this.resetUpdatedConfig();
+      });
   }
 
   // card configuration
